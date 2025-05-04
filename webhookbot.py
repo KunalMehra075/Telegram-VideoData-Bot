@@ -44,6 +44,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'Choose an option:',
         reply_markup=reply_markup
     )
+    
+async def handlehello(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f'Hi Kunal! Your Annovator Bot is ready for action! 🥳🍸')
 
 
 async def handle_any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -121,6 +124,7 @@ def main():
     app.add_handler(conv_handler)   
     
     
+    app.add_handler(CommandHandler('hello', handlehello))
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))

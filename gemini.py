@@ -13,6 +13,7 @@ basic_prompt= "I am feeling lucky today,tell me something good"
 async def getResponseFromGemini(prompt=basic_prompt):
     try:
         response = await client.models.generate_content(model="gemini-2.0-flash",contents=prompt)
+        print("Response generated successfully from Gemini")
         return response.text
     except Exception as e:
         print(e)
