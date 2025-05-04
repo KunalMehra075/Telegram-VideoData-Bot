@@ -101,7 +101,7 @@ async def videoslength(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Command: Unknown commands
 async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("❌ Sorry, I don’t recognize that command. Please use /help to see available commands.")
+    await update.message.reply_text("❌ Sorry, I don’t recognize that command. Please use /start to see available commands.")
 
 
 if __name__ == '__main__':
