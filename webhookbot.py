@@ -52,7 +52,7 @@ async def handlehello(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
     try:
-        reply = await getResponseFromGemini(prompt=user_text)
+        reply =  getResponseFromGemini(prompt=user_text)
         await update.message.reply_text(reply)
     except Exception as e:
         await update.message.reply_text("❌ Sorry, something went wrong while talking to Gemini.")

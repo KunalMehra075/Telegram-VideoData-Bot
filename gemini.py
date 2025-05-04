@@ -12,9 +12,9 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 basic_prompt= "I am feeling lucky today,tell me something good"
 
 
-async def getResponseFromGemini(prompt=basic_prompt):
+def getResponseFromGemini(prompt=basic_prompt):
     try:
-        response = await client.models.generate_content(model="gemini-2.0-flash",contents=prompt)
+        response = client.models.generate_content(model="gemini-2.0-flash",contents=prompt)
         logger.info("Response generated successfully from Gemini")
         return response.text
     except Exception as e:
