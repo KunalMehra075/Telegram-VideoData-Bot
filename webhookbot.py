@@ -3,7 +3,7 @@ import logging
 from pymongo import MongoClient
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, ContextTypes, WebhookHandler
+    ApplicationBuilder, CommandHandler, ContextTypes
 )
 
 # Setup logging
@@ -16,13 +16,15 @@ logger = logging.getLogger(__name__)
 # Get environment variables
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
-WEBHOOK_HOST = os.getenv('WEBHOOK_HOST') 
+WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')  # e.g., https://your-app.onrender.com
+PORT = int(os.getenv('PORT', 10000))
 WEBHOOK_PATH = f'/webhook/{BOT_TOKEN}'
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
 
 # Setup MongoDB
 client = MongoClient(MONGO_URI)
 db = client['video_bot_db']
-video_collection = db['videoData']
+video_collection = db['video_data']
 
 # Command: /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,12 +65,7 @@ async def videoslength(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f'📊 Total videos: {count}')
 
 if __name__ == '__main__':
-    app = ApplicationBuilder().token(BOT_TOKEN).webhook(
-        listen='0.0.0.0',
-        port=int(os.getenv('PORT', 10000)),
-        url_path=WEBHOOK_PATH,
-        webhook_url=WEBHOOK_HOST + WEBHOOK_PATH
-    ).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler('start', start))
     app.add_handler(CommandHandler('newvid', newvid))
@@ -77,4 +74,9 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('videoslength', videoslength))
 
     logger.info('🤖 Bot running with webhooks...')
-    app.run_webhook()
+    app.run_webhook(
+        listen='0.0.0.0',
+        port=PORT,
+        url_path=WEBHOOK_PATH,
+        webhook_url=WEBHOOK_URL
+    )
