@@ -9,6 +9,7 @@ from telegram.ext import (
     MessageHandler,
     ConversationHandler,
     ContextTypes,
+    CallbackQueryHandler,
     filters
 )
 # Conversation states
@@ -125,6 +126,10 @@ async def handle_video_selection(update: Update, context: ContextTypes.DEFAULT_T
     
     return ConversationHandler.END
 
+# Conversation handler for deleting videos
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("❌ Operation cancelled.")
+    return ConversationHandler.END
 
 
 
@@ -168,9 +173,21 @@ def main():
         ASK_TITLE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_title)]
     },
     fallbacks=[CommandHandler('cancel', cancel)]
-)
+    )
+        # Setting up the conversation handler
+    delete_conversation = ConversationHandler(
+        entry_points=[CommandHandler('delete', delete)],  # Start with /delete command
+        states={
+            SELECTING_VIDEO: [CallbackQueryHandler(handle_video_selection)],  # Handle video selection
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]  # Handle cancellation
+    )
+
+    
+    
 
     app.add_handler(conv_handler)   
+    app.add_handler(delete_conversation)   
     
     
     app.add_handler(CommandHandler('hello', handlehello))
