@@ -104,7 +104,7 @@ async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ Sorry, I don’t recognize that command. Please use /start to see available commands.")
 
 
-if __name__ == '__main__':
+def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler('start', start))
@@ -136,3 +136,12 @@ if __name__ == '__main__':
         url_path=WEBHOOK_PATH,
         webhook_url=WEBHOOK_URL
     )
+
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as e:
+        print(e)
+ 
