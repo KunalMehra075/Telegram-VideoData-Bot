@@ -1,10 +1,16 @@
 import os
 import logging
 from pymongo import MongoClient
-from telegram import Update
+from telegram import Update,ReplyKeyboardMarkup
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, ContextTypes
+    ApplicationBuilder,
+    CommandHandler,
+    MessageHandler,
+    ConversationHandler,
+    ContextTypes,
+    filters
 )
+ASK_URL, ASK_TITLE = range(2)
 
 # Setup logging
 logging.basicConfig(
@@ -28,22 +34,42 @@ video_collection = db['video_data']
 
 # Command: /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text('Hello! Send /newvid <title> <url> [description] to save a new video.')
+    keyboard = [
+        ['/newvid', '/videoslist'],
+        ['/videoslength', '/flushdb']
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text(
+        'Choose an option:',
+        reply_markup=reply_markup
+    )
 
-# Command: /newvid
-async def newvid(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    args = context.args
-    if len(args) < 2:
-        await update.message.reply_text('Usage: /newvid <title> <url> [description]')
-        return
 
-    title = args[0]
-    url = args[1]
-    description = ' '.join(args[2:]) if len(args) > 2 else ''
+# Start the /newvid conversation
+async def newvid_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('Please send the video URL.')
+    return ASK_URL
 
-    video_data = {'title': title, 'url': url, 'description': description}
-    result = video_collection.insert_one(video_data)
+# Handle URL input
+async def receive_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['url'] = update.message.text
+    await update.message.reply_text('Got the URL! Now send the video title.')
+    return ASK_TITLE
+
+# Handle title input and save to DB
+async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    title = update.message.text
+    url = context.user_data.get('url')
+    description = ''  # Optional: you can add another step if you want
+
+    result = video_collection.insert_one({'title': title, 'url': url, 'description': description})
     await update.message.reply_text(f'✅ Video saved with ID: {result.inserted_id}')
+    return ConversationHandler.END
+
+# Handle cancel or fallback
+async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text('❌ Video creation cancelled.')
+    return ConversationHandler.END
 
 # Command: /flushdb
 async def flushdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -68,7 +94,20 @@ if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler('start', start))
-    app.add_handler(CommandHandler('newvid', newvid))
+    # app.add_handler(CommandHandler('newvid', newvid))
+    
+    conv_handler = ConversationHandler(
+    entry_points=[CommandHandler('newvid', newvid_start)],
+    states={
+        ASK_URL: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_url)],
+        ASK_TITLE: [MessageHandler(filters.TEXT & ~filters.COMMAND, receive_title)]
+    },
+    fallbacks=[CommandHandler('cancel', cancel)]
+)
+
+    app.add_handler(conv_handler)   
+    
+    
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))
