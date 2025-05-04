@@ -36,6 +36,7 @@ video_collection = db['video_data']
 # Command: /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
+        ['/start', '/cancel'],
         ['/newvid', '/videoslist'],
         ['/videoslength', '/flushdb']
     ]
