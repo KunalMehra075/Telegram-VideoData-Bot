@@ -2,3 +2,4 @@ dotenv
 pymongo
 python-telegram-bot
 python-telegram-bot[webhooks]
+google-genai

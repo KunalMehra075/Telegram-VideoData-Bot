@@ -2,6 +2,7 @@ import os
 import logging
 from pymongo import MongoClient
 from telegram import Update,ReplyKeyboardMarkup
+from gemini import getResponseFromGemini
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 # Get environment variables
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 MONGO_URI = os.getenv('MONGO_URI')
-WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')  # e.g., https://your-app.onrender.com
+WEBHOOK_HOST = os.getenv('WEBHOOK_HOST')  
 PORT = int(os.getenv('PORT', 10000))
 WEBHOOK_PATH = f'/webhook/{BOT_TOKEN}'
 WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
@@ -44,6 +45,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+
+async def handle_any_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_text = update.message.text
+    try:
+        reply = await getResponseFromGemini(prompt=user_text)
+        await update.message.reply_text(reply)
+    except Exception as e:
+        await update.message.reply_text("❌ Sorry, something went wrong while talking to Gemini.")
 
 # Start the /newvid conversation
 async def newvid_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -90,11 +99,15 @@ async def videoslength(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = video_collection.count_documents({})
     await update.message.reply_text(f'📊 Total videos: {count}')
 
+# Command: Unknown commands
+async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("❌ Sorry, I don’t recognize that command. Please use /help to see available commands.")
+
+
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler('start', start))
-    # app.add_handler(CommandHandler('newvid', newvid))
     
     conv_handler = ConversationHandler(
     entry_points=[CommandHandler('newvid', newvid_start)],
@@ -111,6 +124,10 @@ if __name__ == '__main__':
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))
+    app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_any_text))
+
+
 
     logger.info('🤖 Bot running with webhooks...')
     app.run_webhook(
