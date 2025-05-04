@@ -1,7 +1,7 @@
 import os
 import logging
 from pymongo import MongoClient
-from telegram import Update,ReplyKeyboardMarkup
+from telegram import Update,ReplyKeyboardMarkup,InlineKeyboardButton, InlineKeyboardMarkup
 from gemini import getResponseFromGemini
 from telegram.ext import (
     ApplicationBuilder,
@@ -11,6 +11,8 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
+# Conversation states
+SELECTING_VIDEO, DELETING_VIDEO = range(2)
 ASK_URL, ASK_TITLE = range(2)
 
 # Setup logging
@@ -83,6 +85,52 @@ async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('❌ Video creation cancelled.')
     return ConversationHandler.END
+
+# /delete command handler
+async def delete(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Fetch all video titles from the database
+    video_docs = video_collection.find()
+    video_buttons = []
+    
+    for doc in video_docs:
+        title = doc.get('title')
+        video_buttons.append([InlineKeyboardButton(title, callback_data=title)])
+
+    # If no videos, notify the user
+    if not video_buttons:
+        await update.message.reply_text("❌ No videos found in the database.")
+        return
+
+    # Send video titles as inline buttons
+    reply_markup = InlineKeyboardMarkup(video_buttons)
+    await update.message.reply_text("Select a video to delete:", reply_markup=reply_markup)
+    
+    return SELECTING_VIDEO
+
+# Handler for when a video button is clicked
+async def handle_video_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    video_title = query.data  # Get the title of the selected video
+    
+    # Find and delete the video from the database
+    video = video_collection.find_one_and_delete({'title': video_title})
+    
+    if video:
+        # Confirm deletion to the user
+        await query.answer()
+        await query.edit_message_text(f"✅ Video '{video_title}' has been deleted.")
+    else:
+        await query.answer()
+        await query.edit_message_text(f"❌ Failed to delete video '{video_title}'.")
+    
+    return ConversationHandler.END
+
+
+
+
+
+
+
 
 # Command: /flushdb
 async def flushdb(update: Update, context: ContextTypes.DEFAULT_TYPE):
