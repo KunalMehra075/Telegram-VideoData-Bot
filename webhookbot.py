@@ -16,7 +16,7 @@ ASK_URL, ASK_TITLE = range(2)
 # Setup logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
+    level=logging.DEBUG
 )
 logger = logging.getLogger(__name__)
 
@@ -147,5 +147,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as e:
-        print(e)
+        logger.error(e)
  
