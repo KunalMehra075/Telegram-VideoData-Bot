@@ -134,7 +134,30 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
+# /cflush command: remove all documents with downloaded: true
+async def cflush(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        result = video_collection.delete_many({'downloaded': True})
+        deleted_count = result.deleted_count
+        await update.message.reply_text(f"✅ Removed {deleted_count} downloaded video(s) from the database.")
+    except Exception as e:
+        logger.error(f"Error in /cflush: {e}", exc_info=True)
+        await update.message.reply_text("❌ Failed to flush downloaded videos.")
 
+# /ndurls command: return all URLs with downloaded: false
+async def ndurls(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        docs = video_collection.find({'downloaded': False})
+        urls = [doc['url'] for doc in docs if 'url' in doc]
+
+        if urls:
+            urls_text = "\n".join(urls)
+            await update.message.reply_text(f"📋 URLs of non-downloaded videos:\n{urls_text}")
+        else:
+            await update.message.reply_text("✅ No non-downloaded videos found.")
+    except Exception as e:
+        logger.error(f"Error in /ndurls: {e}", exc_info=True)
+        await update.message.reply_text("❌ Failed to fetch non-downloaded URLs.")
 
 
 # Command: /flushdb
@@ -194,6 +217,8 @@ def main():
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))
+    app.add_handler(CommandHandler('cflush', cflush))  
+    app.add_handler(CommandHandler('ndurls', ndurls)) 
     app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_any_text))
 
