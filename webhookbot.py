@@ -78,7 +78,7 @@ async def receive_title(update: Update, context: ContextTypes.DEFAULT_TYPE):
     url = context.user_data.get('url')
     description = ''  # Optional: you can add another step if you want
 
-    result = video_collection.insert_one({'title': title, 'url': url, 'description': description})
+    result = video_collection.insert_one({'title': title, 'url': url, 'description': description,'downloaded': False})
     await update.message.reply_text(f'✅ Video saved with ID: {result.inserted_id}')
     return ConversationHandler.END
 
@@ -213,7 +213,7 @@ def main():
     app.add_handler(delete_conversation)   
     
     
-    app.add_handler(CommandHandler('hello', handlehello))
+    app.add_handler(MessageHandler('hello', handlehello))
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))
