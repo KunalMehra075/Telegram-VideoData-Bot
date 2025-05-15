@@ -213,7 +213,7 @@ def main():
     app.add_handler(delete_conversation)   
     
     
-    app.add_handler(MessageHandler('hello', handlehello))
+    app.add_handler(CommandHandler('hello', handlehello))
     app.add_handler(CommandHandler('flushdb', flushdb))
     app.add_handler(CommandHandler('videoslist', videoslist))
     app.add_handler(CommandHandler('videoslength', videoslength))
